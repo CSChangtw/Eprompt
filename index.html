@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>土建工程提示詞生成器</title>
+
+  <!-- PWA -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="提示詞生成">
+  <meta name="theme-color" content="#f5a623">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --card: #1e2333;
+      --border: #2c3350;
+      --border-bright: #3d4a70;
+      --accent: #f5a623;
+      --accent-dim: rgba(245,166,35,0.12);
+      --accent-glow: rgba(245,166,35,0.25);
+      --blue: #4a90e2;
+      --blue-dim: rgba(74,144,226,0.12);
+      --green: #27c980;
+      --green-dim: rgba(39,201,128,0.12);
+      --text: #e8ecf4;
+      --text-muted: #7a85a3;
+      --text-subtle: #4a5272;
+      --label: #b0bcd4;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+      background-image:
+        radial-gradient(ellipse 60% 50% at 80% 10%, rgba(74,144,226,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 10% 80%, rgba(245,166,35,0.05) 0%, transparent 60%);
+    }
+
+    /* ── Header ─────────────────────────── */
+    header {
+      max-width: 680px;
+      margin: 0 auto 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: fadeDown 0.5s ease both;
+    }
+    .header-icon {
+      width: 48px; height: 48px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .header-text h1 {
+      font-family: 'Bebas Neue', 'Noto Sans TC', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 3px;
+      color: var(--text);
+      line-height: 1;
+    }
+    .header-text p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+    .badge {
+      margin-left: auto;
+      padding: 4px 10px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    /* ── Card ────────────────────────────── */
+    .card {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 28px 32px;
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.5s ease both 0.05s;
+    }
+
+    /* ── Grid ────────────────────────────── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Form Group ──────────────────────── */
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    label .icon { margin-right: 5px; font-style: normal; }
+
+    select, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.92rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+    }
+    select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a85a3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    textarea { resize: vertical; line-height: 1.65; }
+    textarea::placeholder { color: var(--text-subtle); }
+
+    /* ── Divider ─────────────────────────── */
+    .divider {
+      grid-column: 1 / -1;
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+
+    /* ── Buttons ─────────────────────────── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 20px;
+      border: none; border-radius: var(--radius-sm);
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f1117;
+      margin-top: 8px;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      background: #ffbe4a;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-copy {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+    .btn-copy:hover { background: rgba(39,201,128,0.2); transform: translateY(-1px); }
+    .btn-copy.copied {
+      background: var(--green);
+      color: #0f1117;
+    }
+
+    /* ── Result Box ──────────────────────── */
+    .result-section {
+      margin-top: 24px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: none;
+      animation: fadeUp 0.35s ease both;
+    }
+    .result-section.visible { display: block; }
+    .result-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .result-header span {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .result-pill {
+      margin-left: auto;
+      padding: 3px 9px;
+      background: var(--blue-dim);
+      border: 1px solid var(--blue);
+      border-radius: 20px;
+      font-size: 0.68rem;
+      color: var(--blue);
+      letter-spacing: 1px;
+    }
+    #output {
+      background: var(--surface);
+      border-color: var(--border-bright);
+      color: #c5d0e8;
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+    #output:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(74,144,226,0.2); }
+
+    /* ── Tip ─────────────────────────────── */
+    .tip {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: var(--blue-dim);
+      border: 1px solid rgba(74,144,226,0.3);
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      color: var(--blue);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .tip-icon { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Animations ──────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Scrollbar ───────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    /* ── Footer ──────────────────────────── */
+    footer {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 0.72rem;
+      color: var(--text-subtle);
+      letter-spacing: 1px;
+    }
+
+  /* ── PWA Install ─────────────────────── */
+  #installWrap { max-width: 680px; margin: 0 auto 16px; animation: fadeDown 0.5s ease both; }
+  #installBtn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 11px 20px;
+    background: rgba(245,166,35,0.12);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.88rem; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+  #installBtn:hover { background: rgba(245,166,35,0.2); }
+  #installBtn:active { transform: scale(0.98); }
+  /* iOS 說明彈窗 */
+  #iosModal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 1000;
+    align-items: flex-end; justify-content: center;
+  }
+  #iosModal.show { display: flex; }
+  #iosBox {
+    background: var(--card); border: 1px solid var(--border-bright);
+    border-radius: 16px 16px 0 0;
+    padding: 24px 20px 40px; width: 100%; max-width: 680px;
+    font-size: 0.92em; line-height: 1.8;
+  }
+  #iosBox h3 { margin: 0 0 14px; color: var(--accent); font-size: 1em; text-align: center; }
+  #iosBox ol { margin: 0; padding-left: 20px; color: var(--label); }
+  #iosBox li { margin-bottom: 6px; }
+  #iosBox .tag { background: var(--surface); border: 1px solid var(--border-bright); border-radius: 4px; padding: 1px 6px; font-size: 0.85em; }
+  #iosClose {
+    display: block; margin: 20px auto 0;
+    background: var(--accent); color: #0f1117;
+    border: none; border-radius: 8px;
+    padding: 10px 32px; font-size: 0.92em;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700; cursor: pointer;
+  }
+  #offlineToast {
+    display: none; position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--border-bright);
+    color: var(--text); padding: 10px 22px;
+    border-radius: 20px; font-size: 0.82em; z-index: 999;
+    white-space: nowrap;
+  }
+  </style>
+</head>
+<body>
+
+<div id="installWrap">
+  <button id="installBtn">📲 安裝 App，離線也能使用</button>
+</div>
+
+<div id="iosModal">
+  <div id="iosBox">
+    <h3>👷 加入主畫面</h3>
+    <ol>
+      <li>點下方工具列的 <span class="tag">分享</span> 按鈕 ☐↑</li>
+      <li>向下滑找到 <span class="tag">加入主畫面</span></li>
+      <li>點右上角「新增」完成安裝</li>
+    </ol>
+    <button id="iosClose">知道了</button>
+  </div>
+</div>
+
+<header>
+  <div class="header-icon">👷</div>
+  <div class="header-text">
+    <h1>土木建築工程<br>提示詞生成器</h1>
+  </div>
+<div class="badge">台南CPC</div>
+</header>
+
+<div class="card">
+  <div class="grid-2">
+
+    <!-- 扮演角色 -->
+    <div class="form-group">
+      <label><i class="icon">👤</i>扮演角色</label>
+      <select id="role">
+        <option value="主任技師">主任技師</option>
+        <option value="工地主任">工地主任</option>
+        <option value="現場工程師">現場工程師</option>
+        <option value="品管人員">品管人員</option>
+        <option value="監造人員">監造人員</option>
+        <option value="安衛管理員">安衛管理員</option>
+        <option value="作業主管">作業主管</option>
+      </select>
+    </div>
+
+    <!-- 工程階段 -->
+    <div class="form-group">
+      <label><i class="icon">🏗️</i>工程階段</label>
+      <select id="stage">
+        <option value="計畫書提送">計畫書提送</option>
+        <option value="材料檢試驗">材料檢試驗</option>
+        <option value="假設工程">假設工程</option>
+        <option value="基礎開挖工程">基礎開挖工程</option>
+        <option value="主體結構工程">主體結構工程</option>
+        <option value="泥作裝修工程">泥作裝修工程</option>
+        <option value="道路橋梁工程">道路橋梁工程</option>
+        <option value="機水電工程">機水電工程</option>
+        <option value="景觀植栽工程">景觀植栽工程</option>
+      </select>
+    </div>
+
+    <!-- 任務類型 -->
+    <div class="form-group">
+      <label><i class="icon">📋</i>任務類型</label>
+      <select id="task">
+        <option value="撰寫缺失改善對策">撰寫缺失改善對策</option>
+        <option value="編寫施工計畫大綱">編寫施工計畫大綱</option>
+        <option value="擬定安衛宣導重點">擬定安衛宣導重點</option>
+        <option value="編製自主檢查表">編製自主檢查表</option>
+        <option value="問題原因判識">問題原因判識</option>
+        <option value="報告內容審查">報告內容審查</option>
+        <option value="試驗數據分析">試驗數據分析</option>
+      </select>
+    </div>
+
+    <!-- 輸出格式 -->
+    <div class="form-group">
+      <label><i class="icon">📄</i>輸出格式</label>
+      <select id="format">
+        <option value="條列式">條列式</option>
+        <option value="列表彙整">列表彙整</option>
+        <option value="繪圖說明">繪圖說明</option>
+        <option value="HTML檔案">HTML 檔案</option>
+        <option value="Word檔案">Word 檔案</option>
+        <option value="PDF檔案">PDF 檔案</option>
+      </select>
+    </div>
+
+    <hr class="divider">
+
+    <!-- 現場描述 -->
+    <div class="form-group full">
+      <label><i class="icon">📝</i>現場具體狀況描述</label>
+      <textarea id="situation" rows="5"
+        placeholder="例如：地下二層 B 區柱子拆模有嚴重蜂窩，蜂窩面積約 30×40 cm，深度約 5 cm；或貼上需要撰寫的計畫書名稱、試驗數據等..."></textarea>
+    </div>
+
+  </div><!-- /grid-2 -->
+
+  <button class="btn btn-primary" onclick="generatePrompt()">
+    ✦ 生成專屬提示詞
+  </button>
+
+  <!-- Result -->
+  <div id="resultSection" class="result-section">
+    <div class="result-header">
+      <span>✨ 生成結果</span>
+
+    </div>
+    <textarea id="output" rows="12" readonly></textarea>
+    <div class="tip">
+      <span class="tip-icon">💡</span>
+      <span>可直接複製至 ChatGPT、Gemini 或 Claude 使用。若指定輸出為檔案格式，AI 將以 UTF-8 繁體中文呈現，避免亂碼。</span>
+    </div>
+    <button class="btn btn-copy" id="copyBtn" onclick="copyToClipboard()" style="margin-top: 12px;">
+      ⎘ 一鍵複製提示詞
+    </button>
+  </div>
+</div>
+
+<footer>© 土建工程 AI 工具 · 張朝順</footer>
+
+<script>
+  function generatePrompt() {
+    const role      = document.getElementById('role').value;
+    const stage     = document.getElementById('stage').value;
+    const task      = document.getElementById('task').value;
+    const format    = document.getElementById('format').value.replace('（Markdown 表格）', '');
+    const situation = document.getElementById('situation').value.trim();
+
+    if (!situation) {
+      shakeSituation();
+      return;
+    }
+
+    let formatConstraint = `輸出形式請依照【${format}】呈現。`;
+
+    if (format.includes('檔案')) {
+      formatConstraint += `\n   ⚠️ 重要規範：由於指定輸出為檔案格式，請務必確保內容為標準的「繁體中文」，並使用 UTF-8 編碼，確保「無亂碼」產生。`;
+    } else if (format === '列表彙整') {
+      formatConstraint += `請使用 Markdown 表格進行清楚分類彙整。`;
+    } else if (format === '繪圖說明') {
+      formatConstraint = `輸出形式請依照【繪圖說明】呈現。
+   ⚠️ 【繪圖與備用方案指令】：
+   1. 若你具備生成圖像的能力，請直接輸出呈現上述狀況的「專業工程示意圖或剖面圖」。
+   2. 若你的系統受限無法直接提供示意圖，請改為提供一段高品質、可供直接複製的「英文繪圖提示詞 (Image Generation Prompt)」，並以 Markdown Code Block 格式呈現（即以 \`\`\`prompt 開頭、\`\`\` 結尾包覆英文提示詞內容），方便使用者直接複製貼上。
+   3. 【標註編號要求】：無論是直接生圖或提供英文提示詞，請務必在圖片的關鍵部位加上「數字編號（如 ①, ②, ③ 等）」。各編號須唯一且絕對不得重複——即使是功能相近的構件，也必須分配不同編號。在輸出圖例清單之前，請先自我檢查：「是否有任何編號出現超過一次？」若有，立即重新編排，確保每個編號僅對應一個明確的圖示位置或構件，編號序列須連續且無跳號。
+   4. 【繁體中文標註要求 — 最高優先級】：下列所有位置的文字，無論是直接生圖或英文提示詞中的 text overlay 指令，一律必須使用「繁體中文」，嚴禁出現英文或簡體中文：
+      - 圖面標題（Title）
+      - 圖例表格（LEGEND）內的所有構件名稱
+      - 圖面內所有引線標註文字
+      - 尺寸說明、深度標示（如「鑽孔深度」、「錨定深度」）
+      - 比例尺標示（如「比例 1:50」）
+      - 視圖名稱（如「側面剖面圖」）
+      - 備註說明與回覆中的編號對應圖例清單
+      ※ 英文繪圖提示詞（Image Generation Prompt）的英文本體不在此限，但提示詞中凡指定圖面文字內容（如 label、title、legend text）之處，均須以繁體中文字串給定，例如：label "混凝土牆基層" 而非 label "RC Wall"。`;
+    }
+
+    const finalPrompt =
+`你現在是一位擁有 20 年台灣土木建築現場經驗的${role}，熟知公共工程委員會與內政部營建署相關規範。
+
+目前的工程階段為【${stage}】。
+現場遇到的具體狀況／需求／數據如下：
+「${situation}」
+
+請協助我進行【${task}】。
+請嚴格遵守以下限制：
+1. 內容必須符合台灣營建業實務慣例、專有名詞與相關法規。
+2. 若涉及原因判識或數據分析，請依據工程力學、材料特性或法規標準進行客觀推論。
+3. 若涉及審查，請條列出不合理、遺漏或需澄清的疑點。
+4. ${formatConstraint}`;
+
+    document.getElementById('output').value = finalPrompt;
+
+    const section = document.getElementById('resultSection');
+    section.classList.add('visible');
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Reset copy button
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '⎘ 一鍵複製提示詞';
+    btn.classList.remove('copied');
+  }
+
+  function copyToClipboard() {
+    const text = document.getElementById('output').value;
+    if (!text) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showCopied()).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const el = document.getElementById('output');
+    el.select();
+    document.execCommand('copy');
+    showCopied();
+  }
+
+  function showCopied() {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ 已複製！';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⎘ 一鍵複製提示詞';
+      btn.classList.remove('copied');
+    }, 2500);
+  }
+
+  function shakeSituation() {
+    const el = document.getElementById('situation');
+    el.style.borderColor = '#e74c3c';
+    el.style.boxShadow = '0 0 0 3px rgba(231,76,60,0.25)';
+    el.placeholder = '⚠️ 請先描述現場狀況或貼上需要分析的數據！';
+    el.focus();
+    setTimeout(() => {
+      el.style.borderColor = '';
+      el.style.boxShadow = '';
+      el.placeholder = '例如：地下二層 B 區柱子拆模有嚴重蜂窩，蜂窩面積約 30×40 cm，深度約 5 cm；或貼上需要撰寫的計畫書名稱、試驗數據等...';
+    }, 3000);
+  }
+</script>
+<div id="offlineToast">⚠️ 目前離線，已載入快取版本</div>
+
+<script>
+// ── PWA ───────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () =>
+    navigator.serviceWorker.register('./sw.js')
+      .then(r => console.log('SW:', r.scope))
+      .catch(e => console.warn('SW fail:', e))
+  );
+}
+
+const installWrap = document.getElementById('installWrap');
+const installBtn  = document.getElementById('installBtn');
+const iosModal    = document.getElementById('iosModal');
+const iosClose    = document.getElementById('iosClose');
+const toast       = document.getElementById('offlineToast');
+
+const isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                  || navigator.standalone === true;
+let deferredPrompt = null;
+
+if (isStandalone) {
+  installWrap.style.display = 'none';
+} else if (isIOS) {
+  installBtn.addEventListener('click', () => iosModal.classList.add('show'));
+  iosClose.addEventListener('click',   () => iosModal.classList.remove('show'));
+  iosModal.addEventListener('click', e => {
+    if (e.target === iosModal) iosModal.classList.remove('show');
+  });
+} else {
+  installBtn.style.opacity = '0.55';
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.opacity = '1';
+  });
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) {
+      alert('請使用瀏覽器選單（⋮）→「新增至主畫面」安裝。');
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    if (outcome === 'accepted') installWrap.style.display = 'none';
+  });
+  window.addEventListener('appinstalled', () => installWrap.style.display = 'none');
+}
+
+window.addEventListener('offline', () => {
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 3000);
+});
+window.addEventListener('online', () => toast.style.display = 'none');
+if (!navigator.onLine) toast.style.display = 'block';
+</script>
+
+</body>
+</html>
